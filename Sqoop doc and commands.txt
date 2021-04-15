@@ -1,0 +1,288 @@
+Apache sqoop helps in transferring larger data from databases to HDFS (Hadoop distributed File System), databases like Mysql, PostgreSql, Teradata & Oracle can be used. Sqoop uses export and import commands for transferring datasets from other databases to HDFS. Internally, Sqoop uses a map reduce program for storing datasets to HDFS. Sqoop provides automation for transferring data from various databases and offers parallel processing as well as fault tolerance.
+
+Commands entered through command line are associated with a map task to retrieve data from external databases. A reduce task will be used for placing the retrieved data into HDFS/Hbase/Hive. Internally, Sqoop uses various connector API for connecting with several databases. We also have the ability to create custom connectors which will help make database interactions fast and reliable.
+
+Import Data:
+Command used for importing data (Employee table) from other MYSQL databases:
+
+sqoop import –connect jdbc:mysql://localhost:3396/din –table Employee –username dinesh –password ****
+
+–import: command that tells Sqoop to initiate an import.
+–connect <connect string>, –username <user name>, –password <password>: connection parameters used to connect with the database.
+–table <table name>: table to be imported.
+
+In the first step, sqoop analyses database and frames metadata in order for the data to be retrieved.
+
+In the next step it uses map job to transfer data to HDFS using the metadata formed in the first step. Data will be imported to the HDFS system under a file related to the retrieved table. Sqoop also provides features to specify the file name in the HDFS system.
+
+The file created by HDFS will have comma separated values for each column and each row will be placed in a new line. Based on the size of the table, HDFS may create one or more files. Sqoop provisions various format for importing data, for eg: using option -as -avrodatafile will import in avro format.
+
+Sqoop Connectors:
+Connectors help databases which don’t have native JDBC support connect to the database. Connectors are plugin components built on the sqoop framework and can be easily added to the sqoop installation. Sqoop provides various built-in connectors for most of the databases such as MySQL, PostgreSQL, Oracle, SQL Server and DB2. Fast-path connectors are available for MySQL and PostgreSQL which help transfer data with high throughput. Apart from built-in connectors, each company can develop their own connectors for enterprise warehouse systems to NoSQL datastores.
+
+Using Sqoop, data can be imported to HDFS in Avro and Parquet file formats.
+
+Using Sqoop, Avro, and Parquet file format can be exported to RDBMS.
+
+Sqoop jobs use 4 map tasks by default. It can be modified by passing either -m or --num-mappers argument to the job. There is no maximum limit on number of mappers set by Sqoop, but the total number of concurrent connections to the database is a factor to consider.
+=======================================
+
+sqoop import \--connect jdbc:mysql://localhost/sqoop_training --username root --table EMPLOYEE
+
+sqoop import --connect jdbc:mysql://localhost/sqoop_training --username root --table EMPLOYEE --target-dir /user/sqoop
+
+sqoop import --connect jdbc:mysql://localhost/sqoop_training --username root --table EMPLOYEE --target-dir /user/sqoop --m 1
+
+sqoop import \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--table EMPLOYEE \
+--target-dir /user/sqoop3 \
+--m 1 \
+--where "GENDER = 'M'"
+
+sqoop eval \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--query "SELECT * FROM EMPLOYEE"
+
+sqoop eval --connect jdbc:mysql://localhost/sqoop_training --username root --query "INSERT INTO EMPLOYEE VALUES(8,'Rani',27,'F',10000,'Manager','IT',2)"
+
+sqoop eval --connect jdbc:mysql://localhost/sqoop_training --username root --query "INSERT INTO EMPLOYEE VALUES(9,'Rajni',29,'F',100000,'Manager','IT',2)"
+
+sqoop import \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--table COUNTRY
+
+sqoop import --connect jdbc:mysql://localhost/sqoop_training --username root --table EMPLOYEE --delete-target-dir /user/sqoop --m 1
+
+
+sqoop import --connect jdbc:mysql://localhost/sqoop_training --username root --table EMPLOYEE --target-dir /user/sqoop2 --where "Gender = 'M'"
+
+import all tables
+
+sqoop import-all-tables \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--password newpassword  
+
+
+
+Using password file:
+make you passwor file using below commands to avoid any extra spaces in file
+
+echo -n "yourpassword" > passwordfile.password
+ex:
+echo -n "newpassword" > sqoopPasswordFile.password
+
+sqoop import --connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--password-file file:///home/bigdatalab/Downloads/sqoopPasswordFile.password \
+--table EMPLOYEE \
+--target-dir /user/sqoop \
+--where "Gender = 'M'"
+==================================================================================================================================================
+
+Apache Sqoop efficiently transfers data between Hadoop filesystem and relational databases.
+Data can be loaded into HDFS all at once or it can also be loaded incrementally.
+Below are two techniques to incrementally load data from relational database to HDFS
+(1) Incremental Append
+(2) Incremental Last Modified
+
+We will load data from MySQL which is installed by default on Hadoop
+
+For loading data incrementally we create sqoop jobs as opposed to running one time sqoop scripts.
+Sqoop jobs store metadata information such as last-value , incremental-mode,file-format,output-directory, etc which act as reference in loading data incrementally.
+
+Incremental Append
+This technique is used when new rows are continuously being added with increasing id (key) values in the source database table.
+
+1. Create a sample table and populate it with values
+
+CREATE TABLE stocks (
+id INT NOT NULL AUTO_INCREMENT,
+symbol varchar(10), 
+name varchar(40), 
+trade_date DATE, 
+close_price DOUBLE, 
+volume INT,
+updated_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ,
+PRIMARY KEY ( id )
+);
+
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('AAL', 'American Airlines', '2015-11-12', 42.4, 4404500);
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('AAPL', 'Apple', '2015-11-12', 115.23, 40217300);
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('AMGN', 'Amgen', '2015-11-12', 157.0, 1964900);
+
+2. Grant privileges on that table
+
+Grant privileges on stocks table to all users on localhost
+GRANT ALL PRIVILEGES ON test.stocks to ‘’@’localhost’;
+
+3. Create and execute a Sqoop job with incremental append option
+
+sqoop job --create incrementalappendImportJob \
+-- import \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--password newpassword \
+--table stocks \
+--target-dir /user/sqoop/stocks_append \
+--incremental append \
+--check-column id \
+--m 1
+
+sqoop job --create incrementalappendImportJob1 \
+-- import \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--password-file file:///home/bigdatalab/Downloads/sqoopPasswordFile.password \
+--table stocks \
+--target-dir /user/sqoop/stocks_append \
+--incremental append \
+--check-column id \
+--m 1
+
+List Sqoop Job , to check if it was created successfully
+sqoop job --list
+
+Use the show job option to check important metadata information of Sqoop job such as table name , incremental column , incremental mode etc.
+sqoop job --show incrementalappendImportJob
+
+By default , the incremental column is the primary key column of the table ,id column in this case.
+Execute the Sqoop job and observe the records written to HDFS
+
+sqoop job --exec incrementalappendImportJob
+
+4. Observe metadata information in job
+Incremental.last.value field stores the last value of id field which is imported in HDFS
+This value is now updated to three.
+
+Next time this job runs , it will only load those rows having id value greater than 3.
+Check HDFS filesystem
+We can observe all three records are written to HDFS Filesystem
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('GARS', 'Garrison', '2015-11-12', 12.4, 23500);
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('SBUX', 'Starbucks', '2015-11-12', 62.90, 4545300);
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('SGI', 'Silicon Graphics', '2015-11-12', 4.12, 123200);
+
+5. Execute the Sqoop job again and observe the output in HDFS
+sqoop job — exec incrementalappendImportJob
+
+Observe in HDFS that data has been loaded incrementally
+Job has loaded all rows having id value greater than 3
+
+6. Observe metadata information in job
+Incremental.last.value has been updated from 3 to 6 !!!
+
+==============================
+Incremental Last Modified
+
+This technique is used when rows in the source database table are being updated.
+It is similar to incremental append but it also tracks the updates done on the table , we need an updated_on column in the source table to keep tracks of the updates being made.
+1. Create Incremental Last Modified Job
+We use — incremental lastmodified option instead of append
+sqoop job --create incrementalImportModifiedJob \
+-- import \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--password newpassword \
+--table stocks \
+--target-dir /user/hirw/sqoop/stocks_modified \
+--incremental lastmodified \
+--check-column updated_time 
+--m 1 
+--append
+
+2. Observe metadata information in job
+Observe incremental.mode is set to DateLastModified and incremental.col is set to updated_time
+sqoop job — show incrementalImportModifiedJob
+3. Execute the Sqoop Job and observe the metadata information
+sqoop job — exec incrementalImportModifiedJob
+After execution we can observe all six rows have been loaded in the HDFS filesystem.
+
+sqoop job — show incrementalImportModifiedJob
+We can observe incremental.last.value is set to the maximum timestamp of updated_time column of the stocks table.
+In the next run , the job will load rows having updated_time value greater than the timestamp highlighted in below screenshot.
+
+4. Modify Data in the source table
+We update two rows and insert three new rows , in total there are five changes.
+
+--
+
+UPDATE stocks SET volume = volume+100, updated_time=now() WHERE id in (2,3);
+
+----
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('GARS', 'Garrison', '2015-11-12', 12.4, 23500);
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('SBUX', 'Starbucks', '2015-11-12', 62.90, 4545300);
+
+INSERT INTO stocks 
+(symbol, name, trade_date, close_price, volume)
+VALUES
+('SGI', 'Silicon Graphics', '2015-11-12', 4.12, 123200);
+
+5. Execute the Sqoop Job and observe the metadata information
+sqoop job — exec incrementalImportModifiedJob
+
+We have retrieved records that have changed , but this is not the expected result as we need to merge the changes.
+
+6. Merge Changes
+
+First we generate a JAR file for the stocks table using Sqoop codegen command
+
+sqoop codegen \
+--connect jdbc:mysql://localhost/sqoop_training \
+--username root \
+--password newpassword \
+--table stocks \
+--outdir /home/sqoop/sqoop-codegen-stocks
+
+Then copy the stocks.jar to local file system of our hadoop cluster
+
+Merge changes using the Sqoop Merge command and mention the primary key on which we want to merge changes , in this case id.
+
+sqoop merge \
+--new-data /user/hirw/sqoop/stocks_modified/part-m-00001 \
+--onto /user/hirw/sqoop/stocks_modified/part-m-00000 \
+--target-dir /user/sqoop/stocks_modified/merged \
+--jar-file stocks.jar \
+--class-name stocks \
+--merge-key id
+
+This command will merge data from file part-m-00001 onto file part-m-00000 using merge-key id.
+part-r-00000
+Observe output in the Merged directory
+
+We have successfully merged changes from both the files !!
