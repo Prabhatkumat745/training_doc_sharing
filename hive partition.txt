@@ -1,0 +1,161 @@
+Hive Partitioning:
+
+  -The partitioning in Hive means dividing the table into some parts based on the values of a particular column like date, course, city or country. The advantage of partitioning is that since the data is stored in slices, the query response time becomes faster.
+  -Apache Hive organizes tables into partitions for grouping same type of data together based on a column or partition key. Each table in the hive can have one or more partition keys to identify a particular partition. Using partition we can make it faster to do queries on slices of the data.
+
+Why is Partitioning Important?
+  -In the current century, we know that the huge amount of data which is in the range of petabytes is getting stored in HDFS. So due to this, it becomes very difficult for Hadoop users to query this huge amount of data.
+  -The Hive was introduced to lower down this burden of data querying. Apache Hive converts the SQL queries into MapReduce jobs and then submits it to the Hadoop cluster. When we submit a SQL query, Hive read the entire data-set.
+  -So, it becomes inefficient to run MapReduce jobs over a large table. Thus this is resolved by creating partitions in tables. Apache Hive makes this job of implementing partitions very easy by creating partitions by its automatic partition scheme at the time of table creation.
+  -In Partitioning method, all the table data is divided into multiple partitions. Each partition corresponds to a specific value(s) of partition column(s). It is kept as a sub-record inside the table’s record present in the HDFS.
+  -Therefore on querying a particular table, appropriate partition of the table is queried which contains the query value. Thus this decreases the I/O time required by the query. Hence increases the performance speed.
+
+How to Create Partitions in Hive?
+  -To create data partitioning in Hive following command is used-
+
+  CREATE TABLE table_name (column1 data_type, column2 data_type) PARTITIONED BY (partition1 data_type, partition2 data_type,….);
+  
+-Hive partitioning can be used for improving the performance of a very specific set of queries, as long as the partitions are aligned with the attributes used in the queries’ filters. Moreover, it is recommended that the attribute, or attributes, used for partitioning have low cardinality, avoiding the creation of a significantly high number of subdirectories, a process that will overload HDFS. Furthermore, partitioning can improve query performance in large datasets, when, as already mentioned, the partition scheme considers the attributes used in the queries’ filters.,  
+
+Types of partitioning in hive:
+ -Static or manual 
+ -Dynamic
+ 
+Hive Static Partitioning:
+
+-Insert input data files individually into a partition table is Static Partition.
+-Usually when loading files (big files) into Hive tables static partitions are preferred.
+-Static Partition saves your time in loading data compared to dynamic partition.
+-You “statically” add a partition in the table and move the file into the partition of the table.
+-We can alter the partition in the static partition.
+-You can get the partition column value from the filename, day of date etc without reading the whole big file.
+-If you want to use the Static partition in the hive you should set property set hive.mapred.mode = strict This property set by default in hive-site.xml
+-Static partition is in Strict Mode.
+-You should use where clause to use limit in the static partition.
+-You can perform Static partition on Hive Manage table or external table.
+
+Hive Dynamic Partitioning:
+
+-Single insert to partition table is known as a dynamic partition.
+-Usually, dynamic partition loads the data from the non-partitioned table.
+-Dynamic Partition takes more time in loading data compared to static partition.
+-When you have large data stored in a table then the Dynamic partition is suitable.
+-If you want to partition a number of columns but you don’t know how many columns then also dynamic partition is suitable.
+-Dynamic partition there is no required where clause to use limit.
+-we can’t perform alter on the Dynamic partition.
+-You can perform dynamic partition on hive external table and managed table.
+-If you want to use the Dynamic partition in the hive then the mode is in non-strict mode.
+-Here are Hive dynamic partition properties you should allow
+
+>create table student (id int, name string, age int,  institute string)   
+partitioned by (course string)  
+row format delimited  
+fields terminated by ',';  
+
+describe student;
+
+
+load data local inpath '/home/bigdatalab/Downloads/student.txt' into table student
+partition(course= "hadoop");  
+
+data1:
+1,ankit,25,blr,hadoop
+2,ahmed,25,hyd,hadoop
+
+load data local inpath '/home/bigdatalab/Downloads/student.txt' into table student
+partition(course= "devops"); 
+data2:
+3,raj,23,nyc,devops
+
+load data local inpath '/home/bigdatalab/Downloads/student.txt' into table student
+partition(course= "salesforce"); 
+data3:
+4,ken,27,del,salesforce
+
+
+create table student (id int, name string, age int,  institute string, course string)  
+row format delimited  
+fields terminated by ',';
+ 
+1,ankit,25,blr,hadoop
+2,ahmed,25,hyd,hadoop
+3,raj,23,nyc,devops
+4,ken,27,del,salesforce
+
+create table student_part (id int, name string, age int,  institute string)   
+partitioned by (course string)  
+row format delimited  
+fields terminated by ','; 
+
+insert overwrite table student_part partition(course = 'hadoop')
+select id, name, age, institute, course from student where course = 'hadoop';
+
+insert overwrite table student_part partition(course = 'devops')
+select id, name, age, institute, course from student where course = 'devops';
+
+Found 3 items
+drwxr-xr-x   - bigdatalab supergroup          0 2021-04-18 09:44 /user/hive/warehouse/ahmed1.db/stu/course=salesforce
+drwxr-xr-x   - bigdatalab supergroup          0 2021-04-18 09:46 /user/hive/warehouse/ahmed1.db/stu/course=devops
+drwxr-xr-x   - bigdatalab supergroup          0 2021-04-18 09:45 /user/hive/warehouse/ahmed1.db/stu/course=hadoop
+
+
+
+select name, age from student where course = 'hadoop';
+ankit, 25
+ahmed, 25
+
+Dynamic Partitioning:
+
+hive> set hive.exec.dynamic.partition=true;    
+hive> set hive.exec.dynamic.partition.mode=nonstrict;
+
+create table student_part (id int, name string, age int, institute string)   
+partitioned by (course string)  
+row format delimited  
+fields terminated by ',';
+
+load data local inpath '/home/bigdatalab/Downloads/student.txt' into table student_part;
+
+SHOW PARTITIONS student_part;
+
+partition
+course = hadoop
+course = devops
+course = salesforce
+
+create table stud_demo(id int, name string, age int, institute string, course string)   
+row format delimited  
+fields terminated by ',';
+
+load data local inpath '/home/bigdatalab/Downloads/student.txt' into table stud_demo; 
+
+create table student_part (id int, name string, age int, institute string)   
+partitioned by (course string)  
+row format delimited  
+fields terminated by ',';
+
+insert into student_part partition(course)  
+select id, name, age, institute, course  
+from stud_demo;    
+
+
+
+create table student_part (id int, name string, age int, institute string)   
+partitioned by (institute string, course string)  
+row format delimited  
+fields terminated by ',';
+===============================================
+
+CREATE TABLE zipcodes(
+RecordNumber int,
+Country string,
+City string,
+Zipcode int)
+PARTITIONED BY(state string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+hdfs dfs -put zipcodes.csv /data/
+> LOAD DATA INPATH '/data/zipcodes.csv' INTO TABLE zipcodes;
+
+LOAD DATA LOCAL INPATH '/home/bigdatalab/Downloads/datasets/zipcodes20.csv' INTO TABLE zipcodes;
