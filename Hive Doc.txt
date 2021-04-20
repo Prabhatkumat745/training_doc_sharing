@@ -1,0 +1,303 @@
+#What is Hive?
+  -Hive is an ETL and Data warehousing tool developed on top of Hadoop Distributed File System (HDFS). Hive makes job easy for performing operations like
+
+    Data encapsulation
+    Ad-hoc queries
+    Analysis of huge datasets
+
+#Important characteristics of Hive:
+
+  -In Hive, tables and databases are created first and then data is loaded into these tables.
+  -Hive as data warehouse designed for managing and querying only structured data that is stored in tables.
+  -While dealing with structured data, Map Reduce doesn't have optimization and usability features like UDFs but Hive framework does. Query optimization refers to an effective way of query execution in terms of performance.
+  -Hive's SQL-inspired language separates the user from the complexity of Map Reduce programming. It reuses familiar concepts from the relational database world, such as tables, rows, columns and schema, etc. for ease of learning.
+  -Hadoop's programming works on flat files. So, Hive can use directory structures to "partition" data to improve performance on certain queries.
+  -A new and important component of Hive i.e. Metastore used for storing schema information. This Metastore typically resides in a relational database. We can interact with Hive using methods like
+    -Web GUI
+    -Java Database Connectivity (JDBC) interface
+  -Most interactions tend to take place over a command line interface (CLI). Hive provides a CLI to write Hive queries using Hive Query Language(HQL)
+  -Generally, HQL syntax is similar to the SQL syntax that most data analysts are familiar with. The Sample query below display all the records present in mentioned table name.
+    -Sample query : Select * from <TableName>
+  -Hive supports four file formats those are TEXTFILE, SEQUENCEFILE, ORC and RCFILE (Record Columnar File).
+  -For single user metadata storage, Hive uses derby database and for multiple user Metadata or shared Metadata case Hive uses MYSQL.
+  
+#Some of the key points about Hive:
+
+  -The major difference between HQL and SQL is that Hive query executes on Hadoop's infrastructure rather than the traditional database.
+  -The Hive query execution is going to be like series of automatically generated map reduce Jobs.
+  -Hive supports partition and buckets concepts for easy retrieval of data when the client executes the query.
+  -Hive supports custom specific UDF (User Defined Functions) for data cleansing, filtering, etc. According to the requirements of the programmers one can define Hive UDFs.
+  -By using Hive, we can perform some peculiar functionality that is not achieved in Relational Databases.
+  
+#Some key differences between Hive and relational databases are the following;
+
+  -Relational databases are of "Schema on READ and Schema on Write". First creating a table then inserting data into the particular table. On relational database tables, functions like Insertions, Updates, and Modifications can be performed.
+  -Hive is "Schema on READ only". So, functions like the update, modifications, etc. don't work with this. Because the Hive query in a typical cluster runs on multiple Data Nodes. So it is not possible to update and modify data across multiple nodes.( Hive versions below 0.13)
+  -Also, Hive supports "READ Many WRITE Once" pattern. Which means that after inserting table we can update the table in the latest Hive versions.
+NOTE: However the new version of Hive comes with updated features. Hive versions ( Hive 0.14) comes up with Update and Delete options as new features
+
+#Hive Consists of Mainly 3 core parts
+
+ 1.Hive Clients
+ 2.Hive Services
+ 3.Hive Storage and Computing
+ 
+1.Hive Clients:
+
+  -Hive provides different drivers for communication with a different type of applications. For Thrift based applications, it will provide Thrift client for communication.
+  -For Java related applications, it provides JDBC Drivers. Other than any type of applications provided ODBC drivers. These Clients and drivers in turn again communicate with Hive server in the Hive services.
+
+2.Hive Services:
+
+  -Client interactions with Hive can be performed through Hive Services. If the client wants to perform any query related operations in Hive, it has to communicate through Hive Services.
+  -CLI is the command line interface acts as Hive service for DDL (Data definition Language) operations. All drivers communicate with Hive server and to the main driver in Hive services.
+  -Driver present in the Hive services represents the main driver, and it communicates all type of JDBC, ODBC, and other client specific applications. Driver will process those requests from different applications to meta store and field systems for further processing.
+
+3.Hive Storage and Computing:
+
+  -Hive services such as Meta store, File system, and Job Client in turn communicates with Hive storage and performs the following actions
+    -Metadata information of tables created in Hive is stored in Hive "Meta storage database".
+    -Query results and data loaded in the tables are going to be stored in Hadoop cluster on HDFS.
+
+#The data flow in Hive behaves in the following pattern;
+
+  1.Executing Query from the UI( User Interface)
+  2.The driver is interacting with Compiler for getting the plan. (Here plan refers to query execution) process and its related metadata information gathering
+  3.The compiler creates the plan for a job to be executed. Compiler communicating with Meta store for getting metadata request
+  4.Meta store sends metadata information back to compiler
+  5.Compiler communicating with Driver with the proposed plan to execute the query.
+  6.Driver Sending execution plans to Execution engine
+  7.Execution Engine (EE) acts as a bridge between Hive and Hadoop to process the query. For DFS operations.
+     -EE should first contacts Name Node and then to Data nodes to get the values stored in tables.
+     -EE is going to fetch desired records from Data Nodes. The actual data of tables resides in data node only. While from Name Node it only fetches the metadata information for the query.
+     -It collects actual data from data nodes related to mentioned query
+     -Execution Engine (EE) communicates bi-directionally with Meta store present in Hive to perform DDL (Data Definition Language) operations. Here DDL operations like CREATE, DROP and ALTERING tables and databases are done. Meta store will store information about database name, table names and column names only. It will fetch data related to query mentioned.
+     -Execution Engine (EE) in turn communicates with Hadoop daemons such as Name node, Data nodes, and job tracker to execute the query on top of Hadoop file system
+  8.Fetching results from driver
+  9.Sending results to Execution engine. Once the results fetched from data nodes to the EE, it will send results back to driver and to UI ( front end)
+ Hive Continuously in contact with Hadoop file system and its daemons via Execution engine
+
+#Different modes of Hive
+  Hive can operate in two modes depending on the size of data nodes in Hadoop.
+
+   These modes are,
+
+     1.Local mode
+     2.Map reduce mode
+  When to use Local mode:
+
+   -If the Hadoop installed under pseudo mode with having one data node we use Hive in this mode
+   -If the data size is smaller in term of limited to single local machine, we can use this mode
+   -Processing will be very fast on smaller data sets present in the local machine
+  When to use Map reduce mode:
+
+   -If Hadoop is having multiple data nodes and data is distributed across different node we use Hive in this mode
+   -It will perform on large amount of data sets and query going to execute in parallel way
+   -Processing of large data sets with better performance can be achieved through this mode
+   -In Hive, we can set this property to mention which mode Hive can work? By default, it works on Map Reduce mode and for local mode you can have the following setting.
+
+  Hive to work in local mode set
+
+   SET mapred.job.tracker=local;
+
+ From the Hive version 0.7 it supports a mode to run map reduce jobs in local mode automatically.
+
+#What is Hive Server2 (HS2)?
+  HiveServer2 (HS2) is a server interface that performs following functions:
+
+   -Enables remote clients to execute queries against Hive
+   -Retrieve the results of mentioned queries
+  
+  From the latest version it's having some advanced features Based on Thrift RPC like;
+
+   -Multi-client concurrency
+   -Authentication
+   
+#Summary:
+
+  -Hive is an ETL and data warehouse tool on top of Hadoop ecosystem and used for processing structured and semi structured data.
+  -Hive is a database present in Hadoop ecosystem performs DDL and DML operations, and it provides flexible query language such as HQL for better querying and processing of data.
+  -It provides so many features compared to RDMS which has certain limitations.
+  
+  For user specific logic to meet client requirements.
+
+    -It provides option of writing and deploying custom defined scripts and User defined functions.
+    -In addition, it provides partitions and buckets for storage specific logics.
+	
+#What is Hive Metastore?
+
+  -Metastore is the central repository of Apache Hive metadata. It stores metadata for Hive tables (like their schema and location) and partitions in a relational database. It provides client access to this information by using metastore service API.
+
+#Hive metastore consists of two fundamental units:
+
+  -A service that provides metastore access to other Apache Hive services.
+  -Disk storage for the Hive metadata which is separate from HDFS storage.
+#Hive Metastore Modes
+  There are three modes for Hive Metastore deployment:
+
+  1.Embedded Metastore
+  2.Local Metastore
+  3.Remote Metastore
+  
+ Let’s now discuss the above three Hive Metastore deployment modes one by one-
+   1.Embedded Metastore
+      -In Hive by default, metastore service runs in the same JVM as the Hive service. It uses embedded derby database stored on the local file system in this mode. Thus both metastore service and hive service runs in the same JVM by using embedded Derby Database. But, this mode also has limitation that, as only one embedded Derby database can access the database files on disk at any one time, so only one Hive session could be open at a time.
+      -If we try to start the second session it produces an error when it attempts to open a connection to the metastore. So, to allow many services to connect the Metastore, it configures Derby as a network server. This mode is good for unit testing. But it is not good for the practical solutions.
+
+   2.Local Metastore
+      -Hive is the data-warehousing framework, so hive does not prefer single session. To overcome this limitation of Embedded Metastore, for Local Metastore was introduced. This mode allows us to have many Hive sessions i.e. many users can use the metastore at the same time. We can achieve by using any JDBC compliant like MySQL which runs in a separate JVM or different machines than that of the Hive service and metastore service which are running in the same JVM.
+      -This configuration is called as local metastore because metastore service still runs in the same process as the Hive. But it connects to a database running in a separate process, either on the same machine or on a remote machine. Before starting Apache Hive client, add the JDBC / ODBC driver libraries to the Hive lib folder.
+      -MySQL is a popular choice for the standalone metastore. In this case, the javax.jdo.option.ConnectionURL property is set to jdbc:mysql://host/dbname? createDatabaseIfNotExist=true, and javax.jdo.option.ConnectionDriverName is set to com.mysql.jdbc.Driver. The JDBC driver JAR file for MySQL (Connector/J) must be on Hive’s classpath, which is achieved by placing it in Hive’s lib directory.
+
+   3.Remote Metastore
+      -Moving further, another metastore configuration called Remote Metastore. In this mode, metastore runs on its own separate JVM, not in the Hive service JVM. If other processes want to communicate with the metastore server they can communicate using Thrift Network APIs. We can also have one more metastore servers in this case to provide more availability. This also brings better manageability/security because the database tier can be completely firewalled off. And the clients no longer need share database credentials with each Hiver user to access the metastore database.
+      -To use this remote metastore, you should configure Hive service by setting hive.metastore.uris to the metastore server URI(s). Metastore server URIs are of the form thrift://host:port, where the port corresponds to the one set by METASTORE_PORT when starting the metastore server.
+
+#Databases Supported by Hive
+  Hive supports 5 backend databases which are as follows:
+
+    -Derby
+    -MySQL
+    -MS SQL Server
+    -Oracle
+    -Postgres
+
+create database demo;
+
+create database ahmed2 WITH DBPROPERTIES ('creator' = 'Ankit Agrawal', 'date' = '2021-04-16');
+
+drop database demo;
+
+drop database if exists ahmed;
+
+drop database if exists hive_training;
+drop database if exists hive_training cascade;
+=======================================================
+Hive Data Types – Primitive and Complex Data Types in Hive
+ 
+  -Hive Data Types are the most fundamental thing you must know before working with Hive Queries.
+  -Data Types in Hive specifies the column/field type in the Hive table. It specifies the type of values that can be inserted into the specified column.
+  -The two categories of Hive Data types that are primitive data type and complex data type along with their example.
+    
+Primitive Type
+  1.Numeric
+  2.Date/time
+  3.String
+  4.Miscellaneous
+
+Complex Type
+  1.Array
+  2.Map
+  3.Struct
+  4.Union
+  
+  1. Numeric Type
+       -The Numeric data type in Hive is categorized into
+            -Integral data type
+            -Floating data type
+			
+       1.1 Integral data type
+           a. TINYINT – (1-byte signed integer ranging from -128 to 127)
+
+           b. SMALLINT – (2-byte signed integer ranging from -32, 768 to 32, 767)
+
+           c. INTEGER – (4-byte signed integer ranging from -2, 147, 483, 648 to 2, 147, 483, 647)
+		   
+		   d. BIGINT – (8-byte signed integer ranging from -9, 223, 372, 036, 854, 775, 808 to 9, 223, 372, 036, 854, 775, 807)
+
+            -In Hive, Integral literals are assumed to be INTEGER by default unless they cross the range of INTEGER values. If we want to use a low integral value like 100 to be treated as TINYINT, SMALLINT, or BIGINT, then we will use the following postfixes (shown in the below table) with the number.
+
+                  Type	Postfix	Example
+                  TINYINT	Y	100Y
+                  SMALLINT	S	100S
+                  INT       -   100
+				  BIGINT	L	100L
+				  
+       1.2 Floating data type 
+           a. FLOAT - It is a 4-byte single-precision floating-point number.
+
+           b. DOUBLE - It is an 8-byte double-precision floating-point number.
+
+           c. DOUBLE PRECISION - It is an alias for DOUBLE. It is only available starting with Hive 2.2.0
+
+           d. DECIMAL - It was introduced in Hive 0.11.0. It is based on Java’s BigDecimal. DECIMAL types support both scientific and non-scientific notations.In Hive 0.11.0 and 0.12, the precision of the DECIMAL type is fixed and limited to 38 digits.
+           As of Hive 0.13, user can specify the scale and precision during table creation using the syntax:
+              DECIMAL(precision, scale)
+           If precision is not specified, then by default, it is equal to 10.
+           If the scale is not specified, then by default, it is equal to 0.
+           DECIMAL provides more precise values and greater range than DOUBLE.
+
+           e. NUMERIC - It started with Hive 3.0.0. The NUMERIC data type is the same as the DECIMAL type.
+
+
+  2. Date/Time data type:
+     a. TIMESTAMP - Timestamps were introduced in Hive 0.8.0. It supports traditional UNIX timestamp with the optional nanosecond precision.
+        The supported Timestamps format is yyyy-mm-dd hh:mm:ss[.f…] in the text files.
+        If they are in any other format, declare them as the appropriate type and use UDF(User Defined Function) to convert them to timestamps.
+          The supported conversions are:
+             Integer numeric type	UNIX timestamp in seconds
+             Floating-point numeric type	UNIX timestamp in seconds with decimal precision
+             Strings	java.sql.Timestamp format "YYYY-MM-DD HH:MM:SS.fffffffff" (9 decimal place precision)		
+	 
+	 b. DATE - Dates were introduced in Hive 0.12.0. DATE value describes a particular year/month/day in the form of YYYY-MM-DD.
+   	    For example- DATE ‘2021-04-18’
+        It does not have a time of day component. The range of value supported for the DATE type is 0000-01-01 to 9999-12-31.		 
+
+     c. INTERVAL - Hive Interval data types are available only after starting with Hive version 1.2 or above.
+        Hive accepts the interval syntax with unit specifications. We have to specify the units along with the interval value.
+
+        For example, INTERVAL '1' DAY refers to the day time.
+
+  3. String data type
+     a. STRING - In Hive, String literals are represented either with the single quotes(' ') or with double-quotes(" ").
+        Hive uses C-style escaping.
+
+     b. VARCHAR - In Hive, VARCHAR data types are of different lengths, but we have to specify the maximum number of characters allowed in the    character string. If the string value assigned to the varchar is less than the maximum length, then the remaining space will be freed out.
+     Also, if the string value assigned is more than the maximum length, then the string is silently truncated.
+	 
+       The length of the varchar is between(1 to 65535).
+	   Trailing whitespace is important in varchar and will affect the comparison results.
+
+     c. CHAR - CHAR data types are fixed-length.
+        The values shorter than the specified length are padded with the spaces.
+        Unlike VARCHAR, trailing spaces are not significant in CHAR types during comparisons.
+        The maximum length of CHAR is fixed at 255.
+
+  4. Miscellaneous data type
+     a. BOOLEAN - Boolean types in Hive store either true or false.
+
+     b. BINARY - BINARY type in Hive is an array of bytes.
+
+This is all about Hive Primitive Data Types. Note:There should not be any performance difference between string and varchar but best option is used as string, varchar is also stored internally as string.
+
+#Hive Complex Data Type
+   -Complex Data Types are built on the top of Primitive Data Type.
+
+   -The Hive Complex Data Type are categorized as:
+     1. arrays - Array in Hive is an ordered sequence of similar type elements that are indexable using the zero-based integers.
+        Arrays in Hive are similar to the arrays in JAVA.
+
+             array<datatype>
+        Example: array(‘Data’,’Flair’,'copy'). The second element is accessed as array[1].
+		 array(1, 33, 5 ,6) array[0] = 1, array[2] = 5
+
+     2. maps - Map in Hive is a collection of key-value pairs, where the fields are accessed using array notations of keys (e.g., [‘key’]).
+
+           map<primitive_type, data_type>
+        Example: ‘first’ -> ‘John’, ‘last’ -> ‘Deo’, represented as map(‘first’, ‘John’, ‘last’, ‘Deo’). Now ‘John’ can be accessed with map[‘first’].
+         map('firstname' -> 'Ankit', 'lastname' -> 'Agrawal') map[lastname] = Agrawal
+		 
+     3. structs - STRUCT in Hive is similar to the STRUCT in C language. It is a record type that encapsulates a set of named fields, which can be any primitive data type.
+     We can access the elements in STRUCT type using DOT (.) notation.
+
+          STRUCT <col_name : data_type [ COMMENT col_comment], ...>
+     Example: For a column c3 of type STRUCT {c1 INTEGER; c2 INTEGER}, the c1 field is accessed by the expression c3.c1.
+
+     4. union - UNION type in Hive is similar to the UNION in C. UNION types at any point of time can hold exactly one data type from its specified data types.
+
+     The full support for UNIONTYPE data type in Hive is still incomplete.
+
+          UNIONTYPE<data_type, data_type, ...>
+
+   -Handling of NULL Values
+         -In Hive data types, the missing values are represented by the special value NULL.
