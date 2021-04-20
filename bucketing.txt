@@ -1,0 +1,46 @@
+What is Buckets?
+ -Buckets in hive is used in segregating of hive table-data into multiple files or directories. it is used for efficient querying.
+
+  -The data i.e. present in that partitions can be divided further into Buckets
+  -The division is performed based on Hash of particular columns that we selected in the table.
+  -Buckets use some form of Hashing algorithm at back end to read each record and place it into buckets
+  -In Hive, we have to enable buckets by using the set.hive.enforce.bucketing=true;
+  
+  
+CREATE TABLE zipcodes(
+RecordNumber int,
+Country string,
+City string,
+Zipcode int)
+CLUSTERED BY Zipcode INTO 4 BUCKETS
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+insert overwrite table zipcodes
+select RecordNumber,Country,City,Zipcode from demo_tbl;
+
+
+drwxr-xr-x   - bigdatalab supergroup          0 2021-04-18 09:44 /user/hive/warehouse/ahmed1.db/zipcodes/000000_0
+drwxr-xr-x   - bigdatalab supergroup          0 2021-04-18 09:46 /user/hive/warehouse/ahmed1.db/zipcodes/000000_1
+drwxr-xr-x   - bigdatalab supergroup          0 2021-04-18 09:45 /user/hive/warehouse/ahmed1.db/zipcodes/000000_2
+drwxr-xr-x   - bigdatalab supergroup          0 2021-04-18 09:45 /user/hive/warehouse/ahmed1.db/zipcodes/000000_3
+
+1,ankit,25,blr,hadoop
+2,ahmed,25,hyd,hadoop
+3,raj,23,nyc,devops
+4,ken,27,del,salesforce
+
+1,ankit,25,blr,hadoop
+2,ahmed,25,hyd,hadoop
+3,raj,23,nyc,devops
+4,ken,27,del,salesforce
+
+1,ankit,25,blr,hadoop
+2,ahmed,25,hyd,hadoop
+3,raj,23,nyc,devops
+4,ken,27,del,salesforce
+
+1,ankit,25,blr,hadoop
+2,ahmed,25,hyd,hadoop
+3,raj,23,nyc,devops
+4,ken,27,del,salesforce
